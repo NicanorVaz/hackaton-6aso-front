@@ -31,7 +31,7 @@ jobs:
       
 
       - name: Unit Test
-          run: npm test
+        run: npm test --App.test.js
 
 
   Build-GCP:
