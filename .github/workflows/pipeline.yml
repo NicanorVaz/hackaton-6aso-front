@@ -31,7 +31,7 @@ jobs:
       
 
       - name: Unit Test
-          run: npm test --App.test.js
+          run: npm test
 
 
   Build-GCP:
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_APP_NAME }}
-      
+
     steps:
 
     - name: Login
