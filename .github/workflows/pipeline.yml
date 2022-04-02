@@ -12,54 +12,58 @@ on:
 jobs:
   Build:
     runs-on: ubuntu-latest
+
     strategy:
       matrix:
         node-version: [12.x, 14.x, 16.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-    steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm ci
-    - run: npm run build --if-present
     
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
-     - name: Unit Test
-        run: npm test --App.test.js
+      - run: npm ci
+      - run: npm run build --if-present
+      
+
+      - name: Unit Test
+          run: npm test --App.test.js
 
 
- Build-GCP:
-  needs: [Build]
-  name: Setup Gcloud Account
-  runs-on: ubuntu-latest
-  env:
-    IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_APP_NAME }}
-  steps:
+  Build-GCP:
+    needs: [Build]
+    name: Setup Gcloud Account
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_APP_NAME }}
+      
+    steps:
 
-  - name: Login
-    uses: google-github-actions/setup-gcloud@v0
-    with:
-      project_id: ${{ secrets.GCP_PROJECT_ID }}
-      service_account_email: ${{ secrets.GCP_EMAIL }}
-      service_account_key: ${{ secrets.GCP_CREDENTIALS }}
+    - name: Login
+      uses: google-github-actions/setup-gcloud@v0
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        service_account_email: ${{ secrets.GCP_EMAIL }}
+        service_account_key: ${{ secrets.GCP_CREDENTIALS }}
 
-  - name: Configure Docker
-    run: gcloud auth configure-docker --quiet
+    - name: Configure Docker
+      run: gcloud auth configure-docker --quiet
 
-  - name: Checkout repository
-    uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-  - name: Build Docker image
-    run: docker build . -t $IMAGE_NAME
+    - name: Build Docker image
+      run: docker build . -t $IMAGE_NAME
 
-  - name: Test Docker image
-    run: docker run $IMAGE_NAME sh -c "go test -v"
+    - name: Test Docker image
+      run: docker run $IMAGE_NAME sh -c "go test -v"
 
-  - name: Push Docker image
-    run: docker push $IMAGE_NAME
+    - name: Push Docker image
+      run: docker push $IMAGE_NAME
 
-  - name: Deploy Docker image
-    run: gcloud run deploy ${{ secrets.GCP_PROJECT_ID }} --image $IMAGE_NAME --region us-central1 --platform managed
+    - name: Deploy Docker image
+      run: gcloud run deploy ${{ secrets.GCP_PROJECT_ID }} --image $IMAGE_NAME --region us-central1 --platform managed
